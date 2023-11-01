@@ -59,7 +59,7 @@ def firmar(pdf,firma,contra,newPDF):
         print("CREA EL NUEVO ARCHIVO")
 
         # MANDO A GUARDA EN ESA RUTA EL NUEVO ARCHIVO
-        output_pdf_path = 'FIRMADOS/SOY_UN_PDF_firmado.pdf'
+        output_pdf_path = 'PDF_FIRMADOS/SOY_UN_PDF_firmado.pdf'
 
         with open(output_pdf_path, 'wb') as output_pdf_file:
             output_pdf_file.write(archivo_pdf_para_enviar_al_cliente.getvalue())   
