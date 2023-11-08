@@ -27,18 +27,19 @@ def FirmarDocumentos():
     if not firma:
         return jsonify({"error": "El campo 'firma' es requerido"}), 400
     if not contra or contra.strip() == "":
-        return jsonify({"error": "El campo 'palabra_secreta' no puede estar en blanco"}), 400
+        return jsonify({"error": "El campo 'contraseña' no puede estar en blanco"}), 400
     if not company or company.strip() == "":
         return jsonify({"error": "El campo 'company_id' no puede estar en blanco"}), 400
     if not dni or dni.strip() == "":
         return jsonify({"error": "El campo 'dni' no puede estar en blanco"}), 400
+    if not paginas_a_firmar or paginas_a_firmar.strip() == "":
+        return jsonify({"error": "El campo 'paginas_a_firmar' no puede estar en blanco"}), 400
+    if not palabraClave or palabraClave.strip() == "":
+        return jsonify({"error": "El campo 'palabraClave' no puede estar en blanco"}), 400
     
     # CREO UNA VARIABLE Q ME PERMITE CONVERITIR LOS DATOS A PDF
     newPDF = io.BytesIO() 
     respStatus, respMsg = firmar(pdf,firma,contra,newPDF,company,dni,paginas_a_firmar,palabraClave) 
-
-    # respStatus = True
-    # respMsg = "bien"
 
     if(respStatus):
         print(respMsg)
