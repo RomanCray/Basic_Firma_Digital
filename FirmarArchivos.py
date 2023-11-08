@@ -7,15 +7,11 @@ from CreateImage import generadorQR
 from cryptography.hazmat import backends
 from cryptography.hazmat.primitives.serialization import pkcs12
 
-def firmar(pdf,firma,contra,newPDF,company,dni,paginas_a_firmar):    
+def firmar(pdf,firma,contra,newPDF,company,dni,paginas_a_firmar,palabraClave):    
 
     archivo_pdf_para_enviar_al_cliente = newPDF
     date = datetime.datetime.utcnow() - datetime.timedelta(hours=12)
-    date = date.strftime("D:%Y%m%d%H%M%S+00'00'")  
-
-    ubiFirma(pdf)
-
-    return print('sip')
+    date = date.strftime("D:%Y%m%d%H%M%S+00'00'")      
 
     try:
         # Abre el archivo P12 como un objeto de archivo binario Y LEE LA INFORMACION Q HAY DENTRO   
@@ -32,7 +28,7 @@ def firmar(pdf,firma,contra,newPDF,company,dni,paginas_a_firmar):
         # Abre el archivo PDF como un objeto de archivo binario
         print("LEE EL PDF")
         # with open(pdf, 'rb') as pdf_file:
-        datau = pdf.read()        
+        datau = pdf.read()              
 
         # ESTABLESO LOS PARAMETROS QUE VA TENER LA FIRMA
 
@@ -44,18 +40,41 @@ def firmar(pdf,firma,contra,newPDF,company,dni,paginas_a_firmar):
             date = datetime.datetime.utcnow() - datetime.timedelta(hours=12)
             date1 = date.strftime("D:%Y%m%d%H%M%S+00'00'")        
             nombreImgTemp = generadorQR(P12_Nobre_remitente,date1)        
-            nombre_archivo = pdf.filename
+            nombre_archivo = nombre_archivo = os.path.basename(pdf.filename)            
+
+            positionx0,positiony0,positionx1,positiony1 = ubiFirma(newPDF,datau,date.strftime('%Y-%m-%d_%H-%M-%S_%f'),company,dni,nombre_archivo,palabraClave)
+            print("POSICIONES")
+            print(positionx0,positiony0,positionx1,positiony1)
+
+            # dct = {
+                #     "aligned": 0,
+                #     "sigflags": 3,
+                #     "sigflagsft": 132,
+                #     "sigpage": numero_pagina,
+                #     "sigbutton": True,
+                #     "sigfield": "Signature1",
+                #     "auto_sigfield": True,
+                #     "sigandcertify": True,
+                #     "signaturebox": ((float(positionx0)),10,(float(positionx1)),10),
+                #     "signature_img": f"img/{nombreImgTemp}",
+                #     # "signature": "Nombre Firmante",        
+                #     "contact": "hola@ejemplo.com",
+                #     "location": "QUITO",
+                #     "signingdate": date1,
+                #     "reason": "PRUEBAS INTHELO",
+                #     "password": contra,
+                # }
 
             dct = {
                     "aligned": 0,
                     "sigflags": 3,
-                    "sigflagsft": 132,
+                    "sigflagsft": 2,
                     "sigpage": numero_pagina,
                     "sigbutton": True,
                     "sigfield": "Signature1",
                     "auto_sigfield": True,
                     "sigandcertify": True,
-                    "signaturebox": (270, 150, 140, 50),
+                    "signaturebox": ((float(positionx0)),10,(float(positionx1)),10),
                     "signature_img": f"img/{nombreImgTemp}",
                     # "signature": "Nombre Firmante",        
                     "contact": "hola@ejemplo.com",
@@ -64,7 +83,6 @@ def firmar(pdf,firma,contra,newPDF,company,dni,paginas_a_firmar):
                     "reason": "PRUEBAS INTHELO",
                     "password": contra,
                 }
-
             # CON ESTO USO EL ARCHIVO Q SE ESTA LEYENDO Y AGREGO LA FIRMA
             print("FIRMA EL PDF CON EL p12")
             datas = cms.sign(datau, dct, p12[0], p12[1], p12[2], "sha256")
