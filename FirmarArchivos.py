@@ -3,7 +3,7 @@ import datetime
 from endesive.pdf import cms
 from cryptography import x509
 from BuscarFirma import ubiFirma
-from CreateImage import generadorQR
+from createImage import generadorQR
 from cryptography.hazmat import backends
 from cryptography.hazmat.primitives.serialization import pkcs12
 

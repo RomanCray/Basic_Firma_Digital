@@ -3,6 +3,7 @@ import qrcode
 import datetime
 
 def generadorQR(nombre, fecha, razon='', localizacion=''):
+    
     date = datetime.datetime.strptime(fecha, 'D:%Y%m%d%H%M%S+00\'00\'')
     formatted_date = date.strftime('%Y-%m-%dT%H:%M:%S.%f-05:00')
 
