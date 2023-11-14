@@ -4,6 +4,11 @@ from FirmarArchivos import firmar
 from BuscarFirma import ubiFirma
 import io
 import json
+from loger import configure_logger
+import logging
+
+# Configurar el logger
+configure_logger()
 
 app = Flask(__name__)
 
@@ -20,7 +25,7 @@ def FirmarDocumentos():
         dni = request.form.get("dni")
         company = request.form.get("company_id") 
 
-        print(dni)    
+        logging.info(dni)    
         if not company or company.strip() == "":
             return jsonify({"error": "El campo 'company_id' no puede estar en blanco"}), 400
         if not dni or dni.strip() == "":
@@ -30,11 +35,11 @@ def FirmarDocumentos():
         
         # CREO UNA VARIABLE Q ME PERMITE CONVERITIR LOS DATOS A PDF
         newPDF = io.BytesIO() 
-        print("avanzar")      
+        logging.info("avanzar")      
         respStatus, respMsg = firmar(pdf,datos,newPDF,company,dni)
 
         if(respStatus):
-            print(respMsg)
+            logging.info(respMsg)
             data = {'rutaPdf': respMsg}
             return jsonify(data), 200        
                 
@@ -62,7 +67,7 @@ def PdfVerificacion():
         data = {'rutaPdf': "ALGO SALIO MAL"}    
         return jsonify(data), 500
     
-    print(resp)
+    logging.info(resp)
     data = {'params': resp}
     return jsonify(data), 200            
 

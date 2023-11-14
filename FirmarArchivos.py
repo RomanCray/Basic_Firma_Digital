@@ -9,21 +9,27 @@ from createImage import generadorQR
 from cryptography.hazmat import backends
 from cryptography.hazmat.primitives.serialization import pkcs12
 
+from loger import configure_logger
+import logging
+
+# Configurar el logger
+configure_logger()
+
 import json
 
 def firmar(pdf,datos,newPDF,company,dni):    
 
-    print("FUNCION (firmar)")
+    logging.info("FUNCION (firmar)")
     datas=[]
     dct=[]
     archivo_pdf_para_enviar_al_cliente = newPDF
     date = datetime.datetime.utcnow() - datetime.timedelta(hours=12)           
 
     try:
-        print("LEE EL PDF")
+        logging.info("LEE EL PDF")
         datau = pdf.read() 
  
-        print(datos)
+        logging.info(datos)
         i=0
         for dato in datos:
             firma = dato['firmaNom']
@@ -35,10 +41,10 @@ def firmar(pdf,datos,newPDF,company,dni):
 
             nombre_completo = firma
             nombrePartes = nombre_completo.split()
-            print(nombrePartes[0])
-            print(nombrePartes[1])
-            print(nombrePartes[2])
-            print(nombrePartes[3])            
+            logging.info(nombrePartes[0])
+            logging.info(nombrePartes[1])
+            logging.info(nombrePartes[2])
+            logging.info(nombrePartes[3])            
 
             url = 'http://localhost/SIER/rel/ho/firma'
             dats = {
@@ -60,16 +66,16 @@ def firmar(pdf,datos,newPDF,company,dni):
                     os.makedirs(f'P12_TEMPORAL/{dni}')       
 
                 output_p12_path = f'P12_TEMPORAL/{dni}/TEMPORAL_{date_str}_{nombreArchTemp}.p12'                
-                print(output_p12_path)                
+                logging.info(output_p12_path)                
 
                 with open(output_p12_path, 'wb') as f:
                     f.write(response.content)
-                print('Archivo descargado exitosamente.')
+                logging.info('Archivo descargado exitosamente.')
             else:
-                print(f'Error en la solicitud. Código de respuesta: {response.status_code}')
+                logging.info(f'Error en la solicitud. Código de respuesta: {response.status_code}')
 
             # Abre el archivo P12 como un objeto de archivo binario Y LEE LA INFORMACION Q HAY DENTRO   
-            print("LEE EL p12")
+            logging.info("LEE EL p12")
             with open(output_p12_path, 'rb') as p12_file:    
                 p12 = pkcs12.load_key_and_certificates(
                         p12_file.read(), contra.encode("ascii"), backends.default_backend()
@@ -78,7 +84,7 @@ def firmar(pdf,datos,newPDF,company,dni):
             # Obtener el campo CN (Nombre titular)
             cert = p12[1]
             P12_Nobre_remitente = cert.subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME)[0].value
-            print(P12_Nobre_remitente)   
+            logging.info(P12_Nobre_remitente)   
 
             # ESTABLESO LOS PARAMETROS QUE VA TENER LA FIRMA
             date1 = date.strftime("D:%Y%m%d%H%M%S+00'00'")        
@@ -86,12 +92,12 @@ def firmar(pdf,datos,newPDF,company,dni):
 
             nombre_archivo = os.path.basename(pdf.filename)
 
-            print("POSICIONES")
+            logging.info("POSICIONES")
             x0 = pre_x0 - 40
             y0 = pre_y0 -220
             x1= pre_x1 + 40
             y1= y0 +100
-            print(i,x0,y0,x1,y1,pagina)
+            logging.info(i,x0,y0,x1,y1,pagina)
 
 
             #  794 x 1123 píxeles
@@ -114,10 +120,10 @@ def firmar(pdf,datos,newPDF,company,dni):
                     "password": contra
                 })
             
-            print(dct[-1])
+            logging.info(dct[-1])
 
             # CON ESTO USO EL ARCHIVO Q SE ESTA LEYENDO Y AGREGO LA FIRMA
-            print("FIRMA EL PDF CON EL p12")
+            logging.info("FIRMA EL PDF CON EL p12")
             datas1 = cms.sign(datau, dct[-1], p12[0], p12[1], p12[2], "sha256")
             datas.append(datas1)
 
@@ -129,7 +135,7 @@ def firmar(pdf,datos,newPDF,company,dni):
             i += 1
             os.remove(output_p12_path)            
 
-        print("CREA EL NUEVO ARCHIVO")
+        logging.info("CREA EL NUEVO ARCHIVO")
 
         date_str = date.strftime('%Y-%m-%d_%H-%M-%S_%f') 
 
@@ -141,7 +147,7 @@ def firmar(pdf,datos,newPDF,company,dni):
 
         output_pdf_path = f'PDF_FIRMADOS/{company}/{dni}/FIRMADO_{date_str}_{nombre_archivo}'
         rutaRetorno = f'{company}/{dni}/FIRMADO_{date_str}_{nombre_archivo}'
-        print(output_pdf_path)
+        logging.info(output_pdf_path)
 
         with open(output_pdf_path, 'wb') as output_pdf_file:
             output_pdf_file.write(archivo_pdf_para_enviar_al_cliente.getvalue())   
@@ -151,7 +157,7 @@ def firmar(pdf,datos,newPDF,company,dni):
         return respStatus, respMsg  
   
     except ValueError as e:
-        print(f"Capturada excepción de tipo ")
+        logging.info(f"Capturada excepción de tipo ")
         respMsg = f"{type(e)} | ERROR: " + str(e)
         respStatus = False        
         return respStatus, respMsg
