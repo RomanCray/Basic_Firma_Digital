@@ -1,6 +1,7 @@
 # save this as app.py
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, request, jsonify
 from FirmarArchivos import firmar
+from BuscarFirma import ubiFirma
 import io
 
 app = Flask(__name__)
@@ -11,41 +12,70 @@ app = Flask(__name__)
 def FirmarDocumentos():
     # code_sigcenter = request.headers.get('code_sigcenter')
     # if code_sigcenter != 'tu_valor_esperado':
-    #     return Response('Acceso no autorizado', status=401, content_type='text/plain')
+    #     return Response('Acceso no autorizado', status=401, content_type='text/plain')        
+    try:
+        pdf = request.files.get("pdf")
+        datos = request.form.getlist("datos")        
+        dni = request.form.get("dni")
+        company = request.form.get("company_id") 
 
+        print(dni)    
+        if not company or company.strip() == "":
+            return jsonify({"error": "El campo 'company_id' no puede estar en blanco"}), 400
+        if not dni or dni.strip() == "":
+            return jsonify({"error": "El campo 'dni' no puede estar en blanco"}), 400
+        if not pdf:
+            return jsonify({"error": "El campo 'pdf' es requerido"}), 400
+        
+        if datos:
+            # Procesar los datos según sea necesario
+            print("Datos del formulario:")
+        else:
+            return jsonify({"error": "El JSON no contiene 'datos' y 'pdf'"}), 400
+        
+        # CREO UNA VARIABLE Q ME PERMITE CONVERITIR LOS DATOS A PDF
+        newPDF = io.BytesIO() 
+        print("avanzar")      
+        respStatus, respMsg = firmar(pdf,datos,newPDF,company,dni)
+
+        if(respStatus):
+            print(respMsg)
+            data = {'rutaPdf': respMsg}
+            return jsonify(data), 200        
+                
+        data = {'rutaPdf': respMsg}    
+        return jsonify(data), 500
+
+    except Exception as e:
+        return jsonify({"error": f"Error al procesar la solicitud: {str(e)}"}), 500   
+            
+
+@app.route('/PdfVerificacion',  methods=['POST'])
+def PdfVerificacion():
+    newPDF = io.BytesIO() 
     pdf = request.files.get("pdf")
-    firma = request.files.get("firma")
-    contra = request.form.get("palabra_secreta")  
-    dni = request.form.get("dni")  
-    company = request.form.get("company_id") 
-    paginas_a_firmar = request.form.get("paginas_a_firmar") 
-    palabraClave = request.form.get("palabraClave")  
+    dni = request.form.get("confirm")  
 
-     # Validar que los archivos no estén en blanco
     if not pdf:
         return jsonify({"error": "El campo 'pdf' es requerido"}), 400
-    if not firma:
-        return jsonify({"error": "El campo 'firma' es requerido"}), 400
-    if not contra or contra.strip() == "":
-        return jsonify({"error": "El campo 'contraseña' no puede estar en blanco"}), 400
-    if not company or company.strip() == "":
-        return jsonify({"error": "El campo 'company_id' no puede estar en blanco"}), 400
     if not dni or dni.strip() == "":
-        return jsonify({"error": "El campo 'dni' no puede estar en blanco"}), 400
-    if not paginas_a_firmar or paginas_a_firmar.strip() == "":
-        return jsonify({"error": "El campo 'paginas_a_firmar' no puede estar en blanco"}), 400
-    if not palabraClave or palabraClave.strip() == "":
-        return jsonify({"error": "El campo 'palabraClave' no puede estar en blanco"}), 400
+        return jsonify({"error": "El campo 'cedula' no puede estar en blanco"}), 400
     
-    # CREO UNA VARIABLE Q ME PERMITE CONVERITIR LOS DATOS A PDF
-    newPDF = io.BytesIO() 
-    respStatus, respMsg = firmar(pdf,firma,contra,newPDF,company,dni,paginas_a_firmar,palabraClave) 
+    resp = ubiFirma(newPDF,pdf,dni)
 
-    if(respStatus):
-        print(respMsg)
-        data = {'rutaPdf': respMsg}
-        return jsonify(data), 200        
-        
-    data = {'rutaPdf': respMsg}
-    return jsonify(data), 500
+    if(resp == False):
+        data = {'rutaPdf': "ALGO SALIO MAL"}    
+        return jsonify(data), 500
+    
+    print(resp)
+    data = {'params': resp}
+    return jsonify(data), 200            
+
+
+@app.route('/')
+def index():
+    return ('<h3>Hola,Pagina erronea</h3>')
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=5000)
    

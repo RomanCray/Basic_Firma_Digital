@@ -34,25 +34,25 @@ def generadorQR(nombre, fecha, razon='', localizacion=''):
     qr_img = qr.make_image(fill_color="black", back_color="white")
 
     # Redimensiona el código QR al tamaño deseado
-    qr_img = qr_img.resize((110, 100))
+    qr_img = qr_img.resize((130, 130))
 
     # Crea una imagen en blanco del tamaño total (300x300)
-    img = Image.new('RGB', (250, 200), "white")
+    img = Image.new('RGB', (282, 135), "white")
 
     # Pega el código QR en la parte superior izquierda
     img.paste(qr_img, (0, 0))
 
     # Añade texto en la parte derecha
     draw = ImageDraw.Draw(img)
-    font = ImageFont.truetype("fonts/static/Besley-Regular.ttf", 8) 
-    font1 = ImageFont.truetype("fonts/static/Besley-Bold.ttf", 11) 
+    font = ImageFont.truetype("fonts/static/Besley-Regular.ttf", 9) 
+    font1 = ImageFont.truetype("fonts/static/Besley-Bold.ttf", 12) 
     text = "Firmado electronicamente por:"
     elementos = nombre.split(' ')
     text1 = f"{elementos[0]} {elementos[1]}"
     text2 = f"{elementos[2]} {elementos[3]}"
-    draw.text((110, 32), text, fill="black", font=font)
-    draw.text((110, 42), text1, fill="black", font=font1)
-    draw.text((110, 57), text2, fill="black", font=font1)
+    draw.text((135, 37), text, fill="black", font=font)
+    draw.text((135, 50), text1, fill="black", font=font1)
+    draw.text((135, 65), text2, fill="black", font=font1)
 
     # Guarda la imagen en un archivo
     img.save(f"img/temp_codigo_qr_{nombre}.png")

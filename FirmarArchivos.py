@@ -1,4 +1,5 @@
 import os
+import math
 import datetime
 from endesive.pdf import cms
 from cryptography import x509
@@ -7,92 +8,94 @@ from createImage import generadorQR
 from cryptography.hazmat import backends
 from cryptography.hazmat.primitives.serialization import pkcs12
 
-def firmar(pdf,firma,contra,newPDF,company,dni,paginas_a_firmar,palabraClave):    
+import json
 
+def firmar(pdf,datos,newPDF,company,dni):    
+
+    print("FUNCION (firmar)")
+    datas=[]
+    dct=[]
     archivo_pdf_para_enviar_al_cliente = newPDF
-    date = datetime.datetime.utcnow() - datetime.timedelta(hours=12)
-    date = date.strftime("D:%Y%m%d%H%M%S+00'00'")      
+    date = datetime.datetime.utcnow() - datetime.timedelta(hours=12)           
 
     try:
-        # Abre el archivo P12 como un objeto de archivo binario Y LEE LA INFORMACION Q HAY DENTRO   
-        print("LEE EL p12")
-        # with open(firma, 'rb') as p12_file:    
-        p12 = pkcs12.load_key_and_certificates(
-            firma.read(), contra.encode("ascii"), backends.default_backend()
-        )      
+        for data in datos:            
 
-        # Obtener el campo CN (Nombre titular)
-        cert = p12[1]
-        P12_Nobre_remitente = cert.subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME)[0].value
+            # Abre el archivo PDF como un objeto de archivo binario
+            print("LEE EL PDF")
+            # with open(pdf, 'rb') as pdf_file:
+            datau = pdf.read() 
 
-        # Abre el archivo PDF como un objeto de archivo binario
-        print("LEE EL PDF")
-        # with open(pdf, 'rb') as pdf_file:
-        datau = pdf.read()              
+            datos_obj = json.loads(data)            
+            i=0
+            for dato in datos_obj:
+                firma = dato.get("firma", {})
+                contra = dato.get("password")                
+                pagina = dato.get("paginas_a_firmar")
+                pre_x0 = dato.get("x0")
+                pre_y0 = dato.get("y0")
+                pre_x1 = dato.get("x1")                                 
 
-        # ESTABLESO LOS PARAMETROS QUE VA TENER LA FIRMA
+                # Abre el archivo P12 como un objeto de archivo binario Y LEE LA INFORMACION Q HAY DENTRO   
+                print("LEE EL p12")
+                with open(firma['name'], 'rb') as p12_file:    
+                    p12 = pkcs12.load_key_and_certificates(
+                        p12_file.read(), contra.encode("ascii"), backends.default_backend()
+                )      
 
-        paginas = paginas_a_firmar.split(',')
-        for pagina in paginas:
+                # Obtener el campo CN (Nombre titular)
+                cert = p12[1]
+                P12_Nobre_remitente = cert.subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME)[0].value                  
 
-            numero_pagina = int(pagina)
+                # ESTABLESO LOS PARAMETROS QUE VA TENER LA FIRMA
+                date1 = date.strftime("D:%Y%m%d%H%M%S+00'00'")        
+                nombreImgTemp = generadorQR(P12_Nobre_remitente,date1)                                
 
-            date = datetime.datetime.utcnow() - datetime.timedelta(hours=12)
-            date1 = date.strftime("D:%Y%m%d%H%M%S+00'00'")        
-            nombreImgTemp = generadorQR(P12_Nobre_remitente,date1)        
-            nombre_archivo = nombre_archivo = os.path.basename(pdf.filename)            
+                nombre_archivo = os.path.basename(pdf.filename)
 
-            positionx0,positiony0,positionx1,positiony1 = ubiFirma(newPDF,datau,date.strftime('%Y-%m-%d_%H-%M-%S_%f'),company,dni,nombre_archivo,palabraClave)
-            print("POSICIONES")
-            print(positionx0,positiony0,positionx1,positiony1)
+                print("POSICIONES")
+                x0 = pre_x0 - 40
+                y0 = pre_y0 -220
+                x1= pre_x1 + 40
+                y1= y0 +100
+                print(i,x0,y0,x1,y1,pagina)
 
-            # dct = {
-                #     "aligned": 0,
-                #     "sigflags": 3,
-                #     "sigflagsft": 132,
-                #     "sigpage": numero_pagina,
-                #     "sigbutton": True,
-                #     "sigfield": "Signature1",
-                #     "auto_sigfield": True,
-                #     "sigandcertify": True,
-                #     "signaturebox": ((float(positionx0)),10,(float(positionx1)),10),
-                #     "signature_img": f"img/{nombreImgTemp}",
-                #     # "signature": "Nombre Firmante",        
-                #     "contact": "hola@ejemplo.com",
-                #     "location": "QUITO",
-                #     "signingdate": date1,
-                #     "reason": "PRUEBAS INTHELO",
-                #     "password": contra,
-                # }
 
-            dct = {
-                    "aligned": 0,
-                    "sigflags": 3,
-                    "sigflagsft": 2,
-                    "sigpage": numero_pagina,
-                    "sigbutton": True,
-                    "sigfield": "Signature1",
-                    "auto_sigfield": True,
-                    "sigandcertify": True,
-                    "signaturebox": ((float(positionx0)),10,(float(positionx1)),10),
-                    "signature_img": f"img/{nombreImgTemp}",
-                    # "signature": "Nombre Firmante",        
-                    "contact": "hola@ejemplo.com",
-                    "location": "QUITO",
-                    "signingdate": date1,
-                    "reason": "PRUEBAS INTHELO",
-                    "password": contra,
-                }
-            # CON ESTO USO EL ARCHIVO Q SE ESTA LEYENDO Y AGREGO LA FIRMA
-            print("FIRMA EL PDF CON EL p12")
-            datas = cms.sign(datau, dct, p12[0], p12[1], p12[2], "sha256")
+                #  794 x 1123 píxeles
+                dct.append({
+                        "aligned": 0,
+                        "sigflags": 3,
+                        "sigflagsft": 132,
+                        "sigpage": int(pagina),
+                        "sigbutton": True,
+                        "sigfield": f"Signature{i}",
+                        "auto_sigfield": True,
+                        "sigandcertify": True,
+                        # "signaturebox": (0,600,200,700),
+                        "signaturebox": (x0,y0,x1,y1),
+                        "signature_img": f"img/{nombreImgTemp}",
+                        "signature": "",        
+                        "contact": "hola@ejemplo.com",
+                        "location": "QUITO",
+                        "signingdate": date1,
+                        "reason": "PRUEBAS INTHELO",
+                        "password": contra
+                    })
+                print(dct[-1])
 
-        # BUELVO A UNIR TODAS LAR PARTES EL PDF Y LA FIRMA CON TODOS LOS CRETIFICADOS
-        archivo_pdf_para_enviar_al_cliente.write(datau) 
-        archivo_pdf_para_enviar_al_cliente.write(datas)
-        archivo_pdf_para_enviar_al_cliente.seek(0)
+                # CON ESTO USO EL ARCHIVO Q SE ESTA LEYENDO Y AGREGO LA FIRMA
+                print("FIRMA EL PDF CON EL p12")
+                datas1 = cms.sign(datau, dct[-1], p12[0], p12[1], p12[2], "sha256")
+                datas.append(datas1)
 
-        print("CREA EL NUEVO ARCHIVO")
+                # BUELVO A UNIR TODAS LAR PARTES EL PDF Y LA FIRMA CON TODOS LOS CRETIFICADOS
+                archivo_pdf_para_enviar_al_cliente.write(datau) 
+                archivo_pdf_para_enviar_al_cliente.write(datas[-1])
+                archivo_pdf_para_enviar_al_cliente.seek(0)
+
+                i += 1
+
+            print("CREA EL NUEVO ARCHIVO")
 
         date_str = date.strftime('%Y-%m-%d_%H-%M-%S_%f') 
 
@@ -108,11 +111,11 @@ def firmar(pdf,firma,contra,newPDF,company,dni,paginas_a_firmar,palabraClave):
 
         with open(output_pdf_path, 'wb') as output_pdf_file:
             output_pdf_file.write(archivo_pdf_para_enviar_al_cliente.getvalue())   
-        
+            
         respMsg = rutaRetorno
         respStatus = True        
-        return respStatus, respMsg
-    
+        return respStatus, respMsg  
+  
     except ValueError as e:
         print(f"Capturada excepción de tipo ")
         respMsg = f"{type(e)} | ERROR: " + str(e)
