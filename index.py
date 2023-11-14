@@ -3,6 +3,7 @@ from flask import Flask, request, jsonify
 from FirmarArchivos import firmar
 from BuscarFirma import ubiFirma
 import io
+import json
 
 app = Flask(__name__)
 
@@ -15,7 +16,7 @@ def FirmarDocumentos():
     #     return Response('Acceso no autorizado', status=401, content_type='text/plain')        
     try:
         pdf = request.files.get("pdf")
-        datos = request.form.getlist("datos")        
+        datos = json.loads(request.form['datos'])      
         dni = request.form.get("dni")
         company = request.form.get("company_id") 
 
@@ -26,12 +27,6 @@ def FirmarDocumentos():
             return jsonify({"error": "El campo 'dni' no puede estar en blanco"}), 400
         if not pdf:
             return jsonify({"error": "El campo 'pdf' es requerido"}), 400
-        
-        if datos:
-            # Procesar los datos según sea necesario
-            print("Datos del formulario:")
-        else:
-            return jsonify({"error": "El JSON no contiene 'datos' y 'pdf'"}), 400
         
         # CREO UNA VARIABLE Q ME PERMITE CONVERITIR LOS DATOS A PDF
         newPDF = io.BytesIO() 
