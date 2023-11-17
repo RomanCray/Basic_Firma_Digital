@@ -3,16 +3,14 @@ from flask import Flask, request, jsonify
 from FirmarArchivos import firmar
 from BuscarFirma import ubiFirma
 import io
+import os
 import json
-from loger import configure_logger
-import logging
+# from loger import configure_logger
+# import logging
 
-# Configurar el logger
-configure_logger()
+# configure_logger()
 
 app = Flask(__name__)
-
-#  ESTO ES FLASK
 
 @app.route('/FirmarDocumentos',  methods=['POST'])
 def FirmarDocumentos():
@@ -25,7 +23,7 @@ def FirmarDocumentos():
         dni = request.form.get("dni")
         company = request.form.get("company_id") 
 
-        logging.info(dni)    
+        # logging.info(dni)    
         if not company or company.strip() == "":
             return jsonify({"error": "El campo 'company_id' no puede estar en blanco"}), 400
         if not dni or dni.strip() == "":
@@ -34,12 +32,41 @@ def FirmarDocumentos():
             return jsonify({"error": "El campo 'pdf' es requerido"}), 400
         
         # CREO UNA VARIABLE Q ME PERMITE CONVERITIR LOS DATOS A PDF
-        newPDF = io.BytesIO() 
-        logging.info("avanzar")      
-        respStatus, respMsg = firmar(pdf,datos,newPDF,company,dni)
+        newPDF = io.BytesIO()         
+
+        if len(datos) == 1:
+            for dato in datos:
+                firma = dato['firmaNom']
+                contra = dato["password"]
+                pagina = dato["paginas_a_firmar"]
+                pre_x0 = dato["x0"]
+                pre_y0 = dato["y0"]
+                pre_x1 = dato["x1"]
+
+                respStatus, respMsg = firmar('U',pdf, firma, contra, pagina, pre_x0, pre_y0, pre_x1, newPDF, company, dni)        
+        else:
+            i = 0
+            rutaPdfNew = None
+            for dato in datos:
+                firma = dato['firmaNom']
+                contra = dato["password"]
+                pagina = dato["paginas_a_firmar"]
+                pre_x0 = dato["x0"]
+                pre_y0 = dato["y0"]
+                pre_x1 = dato["x1"]
+
+                if i == 0:
+                    respStatus, respMsg = firmar('U',pdf, firma, contra, pagina, pre_x0, pre_y0, pre_x1, newPDF, company, dni)
+                else:
+                    respStatus, respMsg = firmar('V',rutaPdfNew, firma, contra, pagina, pre_x0, pre_y0, pre_x1, newPDF, company, dni,i)
+                    os.remove('PDF_FIRMADOS/'+ rutaPdfNew)
+                
+                i = i+1
+                if(respStatus):
+                    rutaPdfNew = respMsg
 
         if(respStatus):
-            logging.info(respMsg)
+            # logging.info(respMsg)
             data = {'rutaPdf': respMsg}
             return jsonify(data), 200        
                 
@@ -67,7 +94,7 @@ def PdfVerificacion():
         data = {'rutaPdf': "ALGO SALIO MAL"}    
         return jsonify(data), 500
     
-    logging.info(resp)
+    # logging.info(resp)
     data = {'params': resp}
     return jsonify(data), 200            
 

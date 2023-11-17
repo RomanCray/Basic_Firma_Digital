@@ -5,10 +5,7 @@ import math
 import os
 
 from loger import configure_logger
-import logging
-
-# Configurar el logger
-configure_logger()
+logger = configure_logger('loggerfirm.log') 
 
 def ubiFirma(newPDF,pdf,dni):
     arr=[]
@@ -29,7 +26,7 @@ def ubiFirma(newPDF,pdf,dni):
     date_str = date.strftime('%Y-%m-%d_%H-%M-%S_%f')
 
     try:
-        logging.info("CREA EL NUEVO ARCHIVO TEMPORAL")
+        logger.info("--------------------- CREA EL NUEVO ARCHIVO PDF TEMPORAL --------------------- ")
 
         newPDF.write(datau)         
         newPDF.seek(0)        
@@ -40,7 +37,7 @@ def ubiFirma(newPDF,pdf,dni):
 
         output_pdf_path = f'PDF_TEMPORAL/{dni}/TEMPORAL_{date_str}_{nombre_archivo}'
         rutaRetorno = f'/{dni}/TEMPORAL_{date_str}_{nombre_archivo}'
-        logging.info(output_pdf_path)
+        logger.info(output_pdf_path)
 
         with open(output_pdf_path, 'wb') as output_pdf_file:
             output_pdf_file.write(newPDF.getvalue())
@@ -75,7 +72,7 @@ def ubiFirma(newPDF,pdf,dni):
                         positiony0 = f'{rect.y0:.1f}'
                         positionx1 = f'{rect.x1:.1f}'
 
-                        logging.info(f"La palabra '{texto_etiqueta}' esta en la posición ({positionx0}, {positiony0})) de la pagina {pagina}")
+                        logger.info(f"La palabra '{texto_etiqueta}' esta en la posición ({positionx0}, {positiony0})) de la pagina {pagina}")
                         posicionesF = {
                             'nom':texto_etiqueta,
                             'x0': math.floor(float(positionx0)),
@@ -94,11 +91,11 @@ def ubiFirma(newPDF,pdf,dni):
         for i in range(longitudArr):
             if arr[i]['nom'] != 'falso':
                 ultimos_valores[arr[i]['nom']] = arr[i]
-            # logging.info(arr[i]['x0'])
+            # #logger.info(arr[i]['x0'])
         resultado = list(ultimos_valores.values())
         
         return resultado
     except ValueError as e:
-        logging.info('*-*-*-*-*-*-*-*-*-*-*-*-*-*--*-*-')
-        logging.info('ubifirma - fallo al crear el archivo')        
+        #logger.info('*-*-*-*-*-*-*-*-*-*-*-*-*-*--*-*-')
+        #logger.info('ubifirma - fallo al crear el archivo')        
         return False
