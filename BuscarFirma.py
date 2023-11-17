@@ -5,10 +5,7 @@ import math
 import os
 
 from loger import configure_logger
-import logging
-
-# Configurar el logger
-configure_logger()
+logger = configure_logger('loggerfirm.log') 
 
 def ubiFirma(newPDF,pdf,dni):
     arr=[]
@@ -23,13 +20,16 @@ def ubiFirma(newPDF,pdf,dni):
     # with open(pdf, 'rb') as pdf_file:
     datau = pdf.read()    
 
-    nombre_archivo = nombre_archivo = os.path.basename(pdf.filename)
+    nombre_archivo = os.path.basename(pdf.filename)        
+    partes = nombre_archivo.split("@")
+    nombre_archivo = partes[-1]
+    logger.info(f"NOMBRE: {nombre_archivo}")
 
     date = datetime.datetime.utcnow() - datetime.timedelta(hours=12)
     date_str = date.strftime('%Y-%m-%d_%H-%M-%S_%f')
 
     try:
-        logging.info("CREA EL NUEVO ARCHIVO TEMPORAL")
+        logger.warning ("--------------------- VERIFICADOR DE FIRMA DIGITAL --------------------- ")
 
         newPDF.write(datau)         
         newPDF.seek(0)        
@@ -40,7 +40,7 @@ def ubiFirma(newPDF,pdf,dni):
 
         output_pdf_path = f'PDF_TEMPORAL/{dni}/TEMPORAL_{date_str}_{nombre_archivo}'
         rutaRetorno = f'/{dni}/TEMPORAL_{date_str}_{nombre_archivo}'
-        logging.info(output_pdf_path)
+        logger.info(output_pdf_path)
 
         with open(output_pdf_path, 'wb') as output_pdf_file:
             output_pdf_file.write(newPDF.getvalue())
@@ -56,6 +56,15 @@ def ubiFirma(newPDF,pdf,dni):
             inicio_etiqueta = "[["
             fin_etiqueta = "]]"
             inicio_pos = texto.find(inicio_etiqueta)
+
+            rotacion = page.rotation
+            # print(rotacion)
+            # ancho, alto = pagina.rect.size
+
+            if (rotacion == 0 or rotacion == 180):
+                horizontal = True
+            else:
+                horizontal = False
 
             while inicio_pos != -1:
                 fin_pos = texto.find(fin_etiqueta, inicio_pos + len(inicio_etiqueta))
@@ -75,12 +84,13 @@ def ubiFirma(newPDF,pdf,dni):
                         positiony0 = f'{rect.y0:.1f}'
                         positionx1 = f'{rect.x1:.1f}'
 
-                        logging.info(f"La palabra '{texto_etiqueta}' esta en la posición ({positionx0}, {positiony0})) de la pagina {pagina}")
+                        # logger.info(f"La palabra '{texto_etiqueta}' esta en la posición ({positionx0}, {positiony0})) de la pagina {pagina}")
                         posicionesF = {
                             'nom':texto_etiqueta,
                             'x0': math.floor(float(positionx0)),
                             'y0': math.floor(float(positiony0)),
-                            'x1': math.floor(float(positionx1)),                            
+                            'x1': math.floor(float(positionx1)),
+                            'orientacion': horizontal,
                             'paginaN': pagina
                         }
                         arr.append(posicionesF)
@@ -94,11 +104,13 @@ def ubiFirma(newPDF,pdf,dni):
         for i in range(longitudArr):
             if arr[i]['nom'] != 'falso':
                 ultimos_valores[arr[i]['nom']] = arr[i]
-            # logging.info(arr[i]['x0'])
+            # #logger.info(arr[i]['x0'])
         resultado = list(ultimos_valores.values())
         
+        logger.info(resultado)
+        logger.warning ("--------------------- FIN VERIFICADOR DE FIRMA DIGITAL --------------------- ")
         return resultado
     except ValueError as e:
-        logging.info('*-*-*-*-*-*-*-*-*-*-*-*-*-*--*-*-')
-        logging.info('ubifirma - fallo al crear el archivo')        
+        logger.error('*-*-*-*-*-*-*-*-*-*-*-*-*-*--*-*-')
+        logger.error('ubifirma - fallo al crear el archivo')        
         return False

@@ -1,8 +1,8 @@
 import logging
 
-def configure_logger(log_file='loggerfirm.log'):
+def configure_logger(log_file):
     formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    
+
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
 
@@ -13,3 +13,5 @@ def configure_logger(log_file='loggerfirm.log'):
     console_handler = logging.StreamHandler()
     console_handler.setFormatter(formatter)
     logger.addHandler(console_handler)
+
+    return logger
