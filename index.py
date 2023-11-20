@@ -62,7 +62,7 @@ def FirmarDocumentos():
             
 
         if(respStatus):
-            logging.info(respMsg)
+            # logging.info(respMsg)
             data = {'rutaPdf': respMsg}
             return jsonify(data), 200        
                 
